@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import { CartProvider, useCart } from './contexts/CartContext';
+import { useCart } from './contexts/CartContext';
 import CartDrawer from './components/CartDrawer';
 import 'react-toastify/dist/ReactToastify.css';
 import getIcon from './utils/iconUtils';
@@ -14,7 +14,7 @@ import ShippingInfo from './pages/checkout/ShippingInfo';
 import PaymentInfo from './pages/checkout/PaymentInfo';
 import OrderConfirmation from './pages/checkout/OrderConfirmation';
 
-function AppContent() {
+function App() {
   const [darkMode, setDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('darkMode');
     return savedMode ? JSON.parse(savedMode) : window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -125,14 +125,6 @@ function AppContent() {
       {/* Cart Drawer */}
       <CartDrawer />
     </div>
-  );
-}
-
-function App() {
-  return (
-    <CartProvider>
-      <AppContent />
-    </CartProvider>
   );
 }
 
