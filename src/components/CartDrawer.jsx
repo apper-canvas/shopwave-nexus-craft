@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import getIcon from '../utils/iconUtils';
 
@@ -11,9 +12,10 @@ const CartDrawer = () => {
     totalItems, 
     subtotal, 
     removeFromCart, 
-    updateQuantity,
-    clearCart
+    updateQuantity
   } = useCart();
+  
+  const navigate = useNavigate();
 
   // Icons
   const XIcon = getIcon('X');
@@ -30,9 +32,9 @@ const CartDrawer = () => {
       return;
     }
     
-    toast.success("Thank you for your order!");
-    clearCart();
     setIsCartOpen(false);
+    navigate('/checkout');
+    toast.info("Proceed to checkout");
   };
 
   if (!isCartOpen) return null;
@@ -142,7 +144,7 @@ const CartDrawer = () => {
               <button 
                 onClick={handleCheckout}
                 className="w-full btn bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all"
-              >
+              > 
                 Checkout <ArrowRightIcon className="w-5 h-5" />
               </button>
             </div>

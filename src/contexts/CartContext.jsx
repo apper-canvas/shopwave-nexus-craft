@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
 const CartContext = createContext();
@@ -18,6 +18,9 @@ export const CartProvider = ({ children }) => {
     return savedCart ? JSON.parse(savedCart) : [];
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [shippingInfo, setShippingInfo] = useState(null);
+  const [paymentInfo, setPaymentInfo] = useState(null);
+  const [orderHistory, setOrderHistory] = useState([]);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -27,6 +30,9 @@ export const CartProvider = ({ children }) => {
   // Derived values
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const shipping = subtotal > 0 ? 5.99 : 0;
+  const tax = subtotal * 0.08; // 8% tax
+  const total = subtotal + shipping + tax;
 
   // Add item to cart
   const addToCart = (product) => {
@@ -69,6 +75,42 @@ export const CartProvider = ({ children }) => {
     });
   };
 
+  // Save shipping information
+  const saveShippingInfo = (info) => {
+    setShippingInfo(info);
+    return true;
+  };
+
+  // Save payment information
+  const savePaymentInfo = (info) => {
+    setPaymentInfo(info);
+    return true;
+  };
+
+  // Process order
+  const processOrder = useCallback(() => {
+    if (cart.length === 0) {
+      toast.error("Your cart is empty!");
+      return false;
+    }
+    
+    if (!shippingInfo || !paymentInfo) {
+      toast.error("Missing shipping or payment information!");
+      return false;
+    }
+    
+    const order = { 
+      id: Date.now(), 
+      items: [...cart], 
+      shipping: shippingInfo, 
+      payment: { ...paymentInfo, cardNumber: paymentInfo.cardNumber.slice(-4) }, // Only store last 4 digits
+      total, subtotal, tax, shipping, date: new Date().toISOString() 
+    };
+    
+    setOrderHistory(prev => [...prev, order]);
+    return order;
+  }, [cart, shippingInfo, paymentInfo, total, subtotal, tax, shipping]);
+
   // Clear cart
   const clearCart = () => {
     setCart([]);
@@ -84,7 +126,17 @@ export const CartProvider = ({ children }) => {
       addToCart,
       removeFromCart,
       updateQuantity,
-      clearCart
+      clearCart,
+      // Checkout related
+      shipping,
+      tax,
+      total,
+      shippingInfo,
+      saveShippingInfo,
+      paymentInfo,
+      savePaymentInfo,
+      processOrder,
+      orderHistory
     }}>
       {children}
     </CartContext.Provider>

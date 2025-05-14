@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { CartProvider, useCart } from './contexts/CartContext';
 import CartDrawer from './components/CartDrawer';
@@ -9,6 +9,10 @@ import getIcon from './utils/iconUtils';
 // Pages
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
+import CheckoutPage from './pages/checkout/CheckoutPage';
+import ShippingInfo from './pages/checkout/ShippingInfo';
+import PaymentInfo from './pages/checkout/PaymentInfo';
+import OrderConfirmation from './pages/checkout/OrderConfirmation';
 
 function AppContent() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -20,7 +24,7 @@ function AppContent() {
   const SunIcon = getIcon('Sun');
   const ShoppingBagIcon = getIcon('ShoppingBag');
   const ShoppingCartIcon = getIcon('ShoppingCart');
-  const { totalItems, setIsCartOpen } = useCart();
+  const { totalItems, setIsCartOpen, cart } = useCart();
 
   // Update dark mode in localStorage and body class
   useEffect(() => {
@@ -31,6 +35,12 @@ function AppContent() {
     }
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
   }, [darkMode]);
+
+  // Protected route for checkout - redirects to home if cart is empty
+  const ProtectedCheckoutRoute = ({ children }) => {
+    if (cart.length === 0) return <Navigate to="/" replace />;
+    return children;
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -73,6 +83,18 @@ function AppContent() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route 
+            path="/checkout" 
+            element={
+              <ProtectedCheckoutRoute>
+                <CheckoutPage />
+              </ProtectedCheckoutRoute>
+            } 
+          />
+          <Route path="/checkout/shipping" element={<ProtectedCheckoutRoute><ShippingInfo /></ProtectedCheckoutRoute>} />
+          <Route path="/checkout/payment" element={<ProtectedCheckoutRoute><PaymentInfo /></ProtectedCheckoutRoute>} />
+          <Route path="/checkout/confirmation" element={<ProtectedCheckoutRoute><OrderConfirmation /></ProtectedCheckoutRoute>} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
