@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useCart } from '../contexts/CartContext';
 import getIcon from '../utils/iconUtils';
 
 // Mock products data
@@ -70,9 +71,11 @@ const MainFeature = () => {
 
   // State management
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
-  const [cart, setCart] = useState([]);
-  const [cartOpen, setCartOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Get cart context
+  const { cart, isCartOpen, setIsCartOpen, totalItems, addToCart, removeFromCart, updateQuantity } = useCart();
+  const cartOpen = isCartOpen;
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [visibleProduct, setVisibleProduct] = useState(null);
 
@@ -86,57 +89,8 @@ const MainFeature = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  // Functions
-  const addToCart = (product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
-      
-      if (existingItem) {
-        // Update quantity if item already exists
-        const updatedCart = prevCart.map(item => 
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
-        return updatedCart;
-      } else {
-        // Add new item to cart
-        return [...prevCart, { ...product, quantity: 1 }];
-      }
-    });
-    
-    toast.success(`${product.name} added to cart!`);
-  };
-
-  const removeFromCart = (productId) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
-    toast.info("Item removed from cart");
-  };
-  
-  const updateQuantity = (productId, change) => {
-    setCart(prevCart => {
-      return prevCart.map(item => {
-        if (item.id === productId) {
-          const newQuantity = Math.max(1, item.quantity + change);
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      });
-    });
-  };
-  
-  const handleCheckout = () => {
-    if (cart.length === 0) {
-      toast.error("Your cart is empty!");
-      return;
-    }
-    
-    toast.success("Thank you for your order!");
-    setCart([]);
-    setCartOpen(false);
+  const handleToggleCart = () => {
+    setIsCartOpen(true);
   };
   
   const showProductDetails = (product) => {
@@ -184,11 +138,11 @@ const MainFeature = () => {
             
             <div className="relative flex-none">
               <button 
-                onClick={() => setCartOpen(true)}
+                onClick={handleToggleCart}
                 className="bg-white text-primary px-4 py-3 rounded-full font-medium flex items-center gap-2 hover:shadow-lg transition-all"
               >
                 <ShoppingCartIcon className="w-5 h-5" />
-                <span>Cart ({totalItems})</span>
+                <span>View Cart ({totalItems})</span>
               </button>
             </div>
           </div>
@@ -308,122 +262,6 @@ const MainFeature = () => {
           </motion.div>
         )}
       </div>
-      
-      {/* Shopping Cart Drawer */}
-      {cartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setCartOpen(false)}
-          ></div>
-          
-          {/* Cart panel */}
-          <motion.div 
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 20 }}
-            className="relative w-full sm:w-96 md:w-[450px] bg-white dark:bg-surface-800 h-full flex flex-col shadow-xl"
-          >
-            <div className="flex items-center justify-between border-b border-surface-200 dark:border-surface-700 p-4">
-              <h2 className="text-xl font-bold">Your Cart</h2>
-              <button 
-                onClick={() => setCartOpen(false)}
-                className="p-1 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700"
-              >
-                <XIcon className="w-6 h-6" />
-              </button>
-            </div>
-            
-            {cart.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <ShoppingCartIcon className="w-16 h-16 text-surface-300 dark:text-surface-600 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Your cart is empty</h3>
-                <p className="text-surface-500 dark:text-surface-400 mb-6">
-                  Looks like you haven't added any products to your cart yet.
-                </p>
-                <button 
-                  onClick={() => setCartOpen(false)}
-                  className="btn btn-primary"
-                >
-                  Continue Shopping
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto p-4">
-                  {cart.map(item => (
-                    <div 
-                      key={item.id} 
-                      className="flex gap-4 py-4 border-b border-surface-200 dark:border-surface-700 last:border-b-0"
-                    >
-                      <div className="w-20 h-20 flex-none rounded-lg overflow-hidden">
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      
-                      <div className="flex-1">
-                        <h4 className="font-medium mb-1">{item.name}</h4>
-                        <div className="text-surface-600 dark:text-surface-400 text-sm mb-2">
-                          ${item.price.toFixed(2)}
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => updateQuantity(item.id, -1)}
-                            className="p-1 rounded-md bg-surface-100 dark:bg-surface-700 hover:bg-surface-200 dark:hover:bg-surface-600"
-                          >
-                            <MinusIcon className="w-4 h-4" />
-                          </button>
-                          
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          
-                          <button 
-                            onClick={() => updateQuantity(item.id, 1)}
-                            className="p-1 rounded-md bg-surface-100 dark:bg-surface-700 hover:bg-surface-200 dark:hover:bg-surface-600"
-                          >
-                            <PlusIcon className="w-4 h-4" />
-                          </button>
-                          
-                          <button 
-                            onClick={() => removeFromCart(item.id)}
-                            className="ml-auto p-1 text-surface-500 hover:text-secondary"
-                            aria-label="Remove item"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="border-t border-surface-200 dark:border-surface-700 p-4">
-                  <div className="flex justify-between mb-4">
-                    <span className="font-medium">Subtotal</span>
-                    <span className="font-bold">${subtotal.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="text-xs text-surface-500 dark:text-surface-400 mb-4">
-                    Shipping and taxes calculated at checkout
-                  </div>
-                  
-                  <button 
-                    onClick={handleCheckout}
-                    className="w-full btn bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all"
-                  >
-                    Checkout <ArrowRightIcon className="w-5 h-5" />
-                  </button>
-                </div>
-              </>
-            )}
-          </motion.div>
-        </div>
-      )}
       
       {/* Product Detail Modal */}
       {visibleProduct && (

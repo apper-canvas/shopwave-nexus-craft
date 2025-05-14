@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
+import { CartProvider, useCart } from './contexts/CartContext';
+import CartDrawer from './components/CartDrawer';
 import 'react-toastify/dist/ReactToastify.css';
 import getIcon from './utils/iconUtils';
 
@@ -8,7 +10,7 @@ import getIcon from './utils/iconUtils';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
 
-function App() {
+function AppContent() {
   const [darkMode, setDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('darkMode');
     return savedMode ? JSON.parse(savedMode) : window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -17,6 +19,8 @@ function App() {
   const MoonIcon = getIcon('Moon');
   const SunIcon = getIcon('Sun');
   const ShoppingBagIcon = getIcon('ShoppingBag');
+  const ShoppingCartIcon = getIcon('ShoppingCart');
+  const { totalItems, setIsCartOpen } = useCart();
 
   // Update dark mode in localStorage and body class
   useEffect(() => {
@@ -39,6 +43,18 @@ function App() {
           </div>
           
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700 relative transition-colors"
+              aria-label="Open shopping cart"
+            >
+              <ShoppingCartIcon className="w-5 h-5" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-secondary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                  {totalItems}
+                </span>
+              )}
+            </button>
             <button 
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 rounded-full bg-surface-100 dark:bg-surface-700 hover:opacity-80 transition-opacity"
@@ -83,8 +99,22 @@ function App() {
         pauseOnHover
         theme={darkMode ? "dark" : "light"}
       />
+
+      {/* Cart Drawer */}
+      <CartDrawer />
     </div>
   );
 }
 
+function App() {
+  return (
+    <CartProvider>
+      <AppContent />
+    </CartProvider>
+  );
+}
+
 export default App;
+
+// This provides a global cart state and drawer that can be accessed
+// from anywhere in the application.
