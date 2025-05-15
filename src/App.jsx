@@ -53,6 +53,13 @@ function App() {
             <span className="text-xl font-bold">ShopWave</span>
           </div>
           
+          <div className="hidden sm:flex items-center space-x-6">
+            <Link to="/" className="text-surface-700 dark:text-surface-300 hover:text-primary dark:hover:text-primary transition-colors">
+              Home
+            </Link>
+            <Link to="/track-order" className="text-surface-700 dark:text-surface-300 hover:text-primary dark:hover:text-primary transition-colors">Track Order</Link>
+          </div>
+          
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsCartOpen(true)}
@@ -62,7 +69,6 @@ function App() {
               <ShoppingCartIcon className="w-5 h-5" />
               {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 bg-secondary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-            <Link to="/track-order" className="hidden sm:block hover:underline text-surface-700 dark:text-surface-300">Track Order</Link>
                   {totalItems}
                 </span>
               )}
