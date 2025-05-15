@@ -159,7 +159,7 @@ const Home = () => {
                 className="btn btn-primary whitespace-nowrap" disabled={isSubmitting}>
                 {isSubmitting ? 'Subscribing...' : 'Subscribe'}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
