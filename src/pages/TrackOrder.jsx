@@ -12,7 +12,6 @@ const TrackOrder = () => {
   const [orderId, setOrderId] = useState(() => searchParams.get('orderId') || '');
   const [email, setEmail] = useState('');
   const [order, setOrder] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [searchCompleted, setSearchCompleted] = useState(false);
 
   const SearchIcon = getIcon('Search');
