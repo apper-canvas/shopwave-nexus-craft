@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import CheckoutLayout from '../../components/checkout/CheckoutLayout';
 import OrderSummary from '../../components/checkout/OrderSummary';
 import { useCart } from '../../contexts/CartContext';
@@ -59,10 +58,8 @@ const ShippingInfo = () => {
     if (validateForm()) {
       // Save shipping info
       saveShippingInfo(formData);
-      toast.success("Shipping information saved");
       navigate('/checkout/payment');
     } else {
-      toast.error("Please fix the errors in the form");
     }
   };
 

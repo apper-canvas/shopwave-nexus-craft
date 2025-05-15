@@ -79,6 +79,3 @@
     display: none;
   }
 }
-
-/* Import react-toastify CSS */
-@import 'react-toastify/dist/ReactToastify.css';
