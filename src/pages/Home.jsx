@@ -160,6 +160,7 @@ const Home = () => {
                 {isSubmitting ? 'Subscribing...' : 'Subscribe'}
               </button>
             </form>
+            </form>
           </div>
         </div>
       </div>
