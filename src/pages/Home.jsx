@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import MainFeature from '../components/MainFeature';
+import { toast } from 'react-toastify';
 import getIcon from '../utils/iconUtils';
 
 const Home = () => {
@@ -23,6 +25,32 @@ const Home = () => {
         bounce: 0.4,
         duration: 0.8
       }
+    }
+  };
+
+  // State for newsletter subscription
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle newsletter subscription
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success(`Thanks for subscribing! You'll receive updates at ${email}`);
+      setEmail('');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -114,14 +142,22 @@ const Home = () => {
             <p className="text-surface-600 dark:text-surface-400 mb-6">
               Subscribe to get updates on our latest products and exclusive offers.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <form 
+              onSubmit={handleSubscribe}
+              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+            >
               <input 
                 type="email" 
                 placeholder="Enter your email" 
                 className="input flex-1"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
-              <button className="btn btn-primary whitespace-nowrap">
-                Subscribe
+              <button 
+                type="submit" 
+                className="btn btn-primary whitespace-nowrap" disabled={isSubmitting}>
+                {isSubmitting ? 'Subscribing...' : 'Subscribe'}
               </button>
             </div>
           </div>
