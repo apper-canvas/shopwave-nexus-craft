@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import getIcon from '../utils/iconUtils';
+import { getOrderItems } from '../services/orderItemService';
+import { getShippingInfo } from '../services/shippingInfoService';
+import { getPaymentInfo } from '../services/paymentInfoService';
 
 const OrderTracking = ({ order }) => {
   const [activeTab, setActiveTab] = useState('status');
+  const [orderDetails, setOrderDetails] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const TruckIcon = getIcon('Truck');
   const BoxIcon = getIcon('Package');
@@ -11,6 +16,42 @@ const OrderTracking = ({ order }) => {
   const ClockIcon = getIcon('Clock');
   const MapPinIcon = getIcon('MapPin');
   const ShoppingBagIcon = getIcon('ShoppingBag');
+  
+  // Fetch complete order details
+  useEffect(() => {
+    async function fetchOrderDetails() {
+      try {
+        setIsLoading(true);
+        
+        // Fetch related records
+        const [items, shippingInfo, paymentInfo] = await Promise.all([
+          getOrderItems(order.Id),
+          getShippingInfo(order.Id),
+          getPaymentInfo(order.Id)
+        ]);
+        
+        // Build complete order object
+        setOrderDetails({
+          ...order,
+          items: items.map(item => ({
+            id: item.Id,
+            name: item.Name,
+            quantity: item.quantity,
+            price: item.price,
+            productId: item.product_id
+          })),
+          shipping: shippingInfo,
+          payment: paymentInfo || { cardNumber: 'XXXX' }
+        });
+      } catch (error) {
+        console.error("Error fetching order details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchOrderDetails();
+  }, [order]);
   
   const orderDate = new Date(order.date);
   const estimatedDelivery = new Date(orderDate);
@@ -35,6 +76,10 @@ const OrderTracking = ({ order }) => {
     { id: 4, name: 'Out for Delivery', icon: TruckIcon, complete: ['Out for Delivery', 'Delivered'].includes(order.status) },
     { id: 5, name: 'Delivered', icon: CheckIcon, complete: ['Delivered'].includes(order.status) }
   ];
+
+  if (isLoading) {
+    return <div className="flex justify-center py-8">Loading order details...</div>;
+  }
 
   return (
     <div className="border-t border-surface-200 dark:border-surface-700 pt-6 mt-6">
@@ -67,7 +112,8 @@ const OrderTracking = ({ order }) => {
               </div>
               <div className="flex items-center justify-end gap-1 text-sm text-surface-600 dark:text-surface-400">
                 <MapPinIcon className="w-4 h-4" />
-                <span>{order.shipping.address}, {order.shipping.city}</span>
+                {orderDetails?.shipping && 
+                  <span>{orderDetails.shipping.address}, {orderDetails.shipping.city}</span>}
               </div>
             </div>
           </div>
@@ -101,24 +147,31 @@ const OrderTracking = ({ order }) => {
           <h3 className="font-semibold mb-4">Order Summary</h3>
           
           <dl className="space-y-2 mb-6">
-            <div className="flex justify-between"><dt>Order number:</dt><dd className="font-medium">#{order.id.toString().slice(-8)}</dd></div>
+            <div className="flex justify-between"><dt>Order number:</dt><dd className="font-medium">#{order.Id.toString()}</dd></div>
             <div className="flex justify-between"><dt>Order date:</dt><dd>{format(new Date(order.date), 'MMM d, yyyy')}</dd></div>
-            <div className="flex justify-between"><dt>Payment method:</dt><dd>Card ending in {order.payment.cardNumber}</dd></div>
-            <div className="flex justify-between font-bold pt-2 border-t border-surface-200 dark:border-surface-700 mt-2"><dt>Total amount:</dt><dd>${order.total.toFixed(2)}</dd></div>
+            <div className="flex justify-between"><dt>Payment method:</dt><dd>Card ending in {orderDetails?.payment?.card_number || 'XXXX'}</dd></div>
+            <div className="flex justify-between font-bold pt-2 border-t border-surface-200 dark:border-surface-700 mt-2"><dt>Total amount:</dt><dd>${order.total?.toFixed(2)}</dd></div>
           </dl>
           
-          <h3 className="font-semibold mb-2">Shipping Address</h3>
-          <p className="mb-6">
-            {order.shipping.firstName} {order.shipping.lastName}<br />
-            {order.shipping.address}<br />
-            {order.shipping.city}, {order.shipping.state} {order.shipping.zip}<br />
-            {order.shipping.email}
-          </p>
+          {orderDetails?.shipping && (
+            <>
+              <h3 className="font-semibold mb-2">Shipping Address</h3>
+              <p className="mb-6">
+                {orderDetails.shipping.first_name} {orderDetails.shipping.last_name}<br />
+                {orderDetails.shipping.address}<br />
+                {orderDetails.shipping.city}, {orderDetails.shipping.state} {orderDetails.shipping.zip}<br />
+                {orderDetails.shipping.email}
+              </p>
+            </>
+          )}
           
           <h3 className="font-semibold mb-2">Order Items</h3>
           <div className="space-y-2">
-            {order.items.map(item => (
-              <div key={item.id} className="flex justify-between"><span>{item.quantity}x {item.name}</span><span>${(item.price * item.quantity).toFixed(2)}</span></div>
+            {orderDetails?.items?.map(item => (
+              <div key={item.id} className="flex justify-between">
+                <span>{item.quantity}x {item.name}</span>
+                <span>${(item.price * item.quantity).toFixed(2)}</span>
+              </div>
             ))}
           </div>
         </div>

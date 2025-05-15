@@ -1,5 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
+
+// Import services
+import { createOrder, updateOrderStatus } from '../services/orderService';
+import { createOrderItems } from '../services/orderItemService';
+import { createShippingInfo } from '../services/shippingInfoService';
+import { createPaymentInfo } from '../services/paymentInfoService';
 
 const CartContext = createContext();
 
@@ -12,6 +19,10 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
+  // Get auth state from Redux
+  const { user, isAuthenticated } = useSelector((state) => state.user);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // Initialize cart from localStorage if available
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem('cart');
@@ -97,27 +108,88 @@ export const CartProvider = ({ children }) => {
 
   // Process order
   const processOrder = useCallback(() => {
-    if (cart.length === 0) {
-      toast.error("Your cart is empty!");
-      return false;
-    }
-    
-    if (!shippingInfo || !paymentInfo) {
-      toast.error("Missing shipping or payment information!");
-      return false;
-    }
-    
-    const order = { 
-      id: Date.now(), 
-      items: [...cart], 
-      shipping: shippingInfo, 
-      payment: { ...paymentInfo, cardNumber: paymentInfo.cardNumber.slice(-4) }, // Only store last 4 digits
-      total, subtotal, tax, shipping, date: new Date().toISOString() 
-    };
-    
-    setOrderHistory(prev => [...prev, order]);
-    return order;
-  }, [cart, shippingInfo, paymentInfo, total, subtotal, tax, shipping]);
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (cart.length === 0) {
+          toast.error("Your cart is empty!");
+          reject("Cart is empty");
+          return;
+        }
+        
+        if (!shippingInfo || !paymentInfo) {
+          toast.error("Missing shipping or payment information!");
+          reject("Missing information");
+          return;
+        }
+
+        if (!isAuthenticated) {
+          toast.error("You must be logged in to complete an order!");
+          reject("Not authenticated");
+          return;
+        }
+        
+        setIsProcessing(true);
+        
+        // 1. Create the order record
+        const orderData = {
+          Name: `Order-${Date.now()}`,
+          status: 'Processing',
+          date: new Date().toISOString(),
+          subtotal,
+          shipping,
+          tax,
+          total,
+          Owner: user.emailAddress
+        };
+        
+        const createdOrder = await createOrder(orderData);
+        
+        // 2. Create order items
+        const orderItems = cart.map(item => ({
+          Name: `Item-${item.name}`,
+          order_id: createdOrder.Id,
+          product_id: item.id,
+          quantity: item.quantity,
+          price: item.price
+        }));
+        
+        await createOrderItems(orderItems);
+        
+        // 3. Create shipping info
+        const shippingData = {
+          Name: `Shipping-${createdOrder.Id}`,
+          order_id: createdOrder.Id,
+          ...shippingInfo
+        };
+        
+        await createShippingInfo(shippingData);
+        
+        // 4. Create payment info (with security in mind)
+        const paymentData = {
+          Name: `Payment-${createdOrder.Id}`,
+          order_id: createdOrder.Id,
+          card_number: paymentInfo.cardNumber,
+          card_type: paymentInfo.cardType,
+          expiry_date: paymentInfo.expiryDate,
+          cvv: '***' // Don't store the actual CVV
+        };
+        
+        await createPaymentInfo(paymentData);
+        
+        // Add to order history for local tracking
+        const order = { id: createdOrder.Id, items: [...cart], shipping: shippingInfo, payment: { ...paymentInfo, cardNumber: paymentInfo.cardNumber.slice(-4) }, total, subtotal, tax, shipping, date: new Date().toISOString() };
+        setOrderHistory(prev => [...prev, order]);
+        
+        setIsProcessing(false);
+        resolve(order);
+      } catch (error) {
+        setIsProcessing(false);
+        console.error("Error processing order:", error);
+        toast.error("Failed to process order. Please try again.");
+        reject(error);
+      }
+    });
+  }, [cart, shippingInfo, paymentInfo, total, subtotal, tax, shipping, isAuthenticated, user]);
 
   // Clear cart
   const clearCart = () => {
@@ -125,21 +197,50 @@ export const CartProvider = ({ children }) => {
   };
 
   // Track order
-  const trackOrder = useCallback((orderId, email) => {
-    // Find the order in history
-    const order = orderHistory.find(order => 
-      order.id.toString() === orderId && 
-      order.shipping.email.toLowerCase() === email.toLowerCase()
-    );
-    
-    if (order) {
-      // Generate a random shipping status for demo purposes
-      const statuses = ['Processing', 'Shipped', 'Out for Delivery', 'Delivered'];
-      const statusIndex = Math.min(Math.floor((Date.now() - order.id) / (1000 * 60 * 60 * 24)), 3);
-      return { ...order, status: statuses[statusIndex] };
+  const trackOrder = useCallback(async (orderId, email) => {
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      // First get the order
+      const orderResponse = await apperClient.getRecordById('order', orderId);
+      
+      if (!orderResponse.data) {
+        return null;
+      }
+      
+      // Then get the shipping info to match with email
+      const shippingParams = {
+        where: [
+          { fieldName: "order_id", Operator: "ExactMatch", values: [orderId] },
+          { fieldName: "email", Operator: "ExactMatch", values: [email] }
+        ]
+      };
+      
+      const shippingResponse = await apperClient.fetchRecords('shipping_info', shippingParams);
+      
+      // If we find a match, fetch all related data for the order
+      if (shippingResponse.data && shippingResponse.data.length > 0) {
+        const orderItemsParams = {
+          where: [{ fieldName: "order_id", Operator: "ExactMatch", values: [orderId] }]
+        };
+        
+        const itemsResponse = await apperClient.fetchRecords('order_item', orderItemsParams);
+        const paymentResponse = await apperClient.fetchRecords('payment_info', { where: [{ fieldName: "order_id", Operator: "ExactMatch", values: [orderId] }] });
+        
+        // Combine all data
+        return { ...orderResponse.data, shipping: shippingResponse.data[0], items: itemsResponse.data || [], payment: paymentResponse.data[0] || {} };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error tracking order ${orderId}:`, error);
+      return null;
     }
-    return null;
-  }, [orderHistory]);
+  }, []);
 
   return (
     <CartContext.Provider value={{
@@ -147,6 +248,7 @@ export const CartProvider = ({ children }) => {
       isCartOpen,
       setIsCartOpen,
       totalItems,
+      isProcessing,
       subtotal,
       addToCart,
       removeFromCart,

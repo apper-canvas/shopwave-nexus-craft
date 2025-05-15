@@ -7,7 +7,8 @@ import OrderTracking from '../components/OrderTracking';
 
 const TrackOrder = () => {
   const [searchParams] = useSearchParams();
-  const { trackOrder } = useCart();
+  const { isProcessing } = useCart();
+  const [isLoading, setIsLoading] = useState(false);
   const [orderId, setOrderId] = useState(() => searchParams.get('orderId') || '');
   const [email, setEmail] = useState('');
   const [order, setOrder] = useState(null);
@@ -23,11 +24,53 @@ const TrackOrder = () => {
     const urlOrderId = searchParams.get('orderId');
     if (urlOrderId) {
       setOrderId(urlOrderId);
+      
+      // If we have a pre-filled email from the context
+      if (email) {
+        handleTrackOrder();
+      }
     }
   }, [searchParams]);
 
-  const handleTrackOrder = (e) => {
-    e.preventDefault();
+  const trackOrder = async (orderId, email) => {
+    try {
+      const { ApperClient } = window.ApperSDK;
+      const apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      
+      // First get the order
+      const orderResponse = await apperClient.getRecordById('order', orderId);
+      
+      if (!orderResponse.data) {
+        return null;
+      }
+      
+      // Then get the shipping info to match with email
+      const shippingParams = {
+        where: [
+          { fieldName: "order_id", Operator: "ExactMatch", values: [orderId] },
+          { fieldName: "email", Operator: "ExactMatch", values: [email] }
+        ]
+      };
+      
+      const shippingResponse = await apperClient.fetchRecords('shipping_info', shippingParams);
+      
+      // If we find a match, return the order details
+      if (shippingResponse.data && shippingResponse.data.length > 0) {
+        return orderResponse.data;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error tracking order ${orderId}:`, error);
+      return null;
+    }
+  };
+
+  const handleTrackOrder = async (e) => {
+    if (e) e.preventDefault();
     
     // Validate inputs
     if (!orderId.trim()) {
@@ -40,18 +83,19 @@ const TrackOrder = () => {
       return;
     }
     
-    // Email validation regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      const result = trackOrder(orderId, email);
+    try {
+      // Email validation regex
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+      
+      setIsLoading(true);
+      setSearchCompleted(false);
+      
+      // Call the actual API
+      const result = await trackOrder(orderId, email);
       
       if (result) {
         setOrder(result);
@@ -61,9 +105,14 @@ const TrackOrder = () => {
         setOrder(null);
       }
       
-      setIsLoading(false);
       setSearchCompleted(true);
-    }, 800);
+    } catch (error) {
+      console.error("Error tracking order:", error);
+      toast.error('An error occurred while tracking your order');
+      setOrder(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
