@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { useCart } from '../contexts/CartContext';
 import getIcon from '../utils/iconUtils';
 import OrderTracking from '../components/OrderTracking';
@@ -73,12 +72,12 @@ const TrackOrder = () => {
     
     // Validate inputs
     if (!orderId.trim()) {
-      toast.error('Please enter an order ID');
+      setOrder(null);
       return;
     }
     
     if (!email.trim()) {
-      toast.error('Please enter your email address');
+      setOrder(null);
       return;
     }
     
@@ -86,7 +85,7 @@ const TrackOrder = () => {
       // Email validation regex
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        toast.error('Please enter a valid email address');
+        setOrder(null);
         return;
       }
       
@@ -98,16 +97,13 @@ const TrackOrder = () => {
       
       if (result) {
         setOrder(result);
-        toast.success('Order found!');
       } else {
-        toast.error('No order found with the provided information');
         setOrder(null);
       }
       
       setSearchCompleted(true);
     } catch (error) {
       console.error("Error tracking order:", error);
-      toast.error('An error occurred while tracking your order');
       setOrder(null);
     } finally {
       setIsLoading(false);

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import CheckoutLayout from '../../components/checkout/CheckoutLayout';
 import { useCart } from '../../contexts/CartContext';
 import getIcon from '../../utils/iconUtils';
@@ -42,9 +41,7 @@ const OrderConfirmation = () => {
       setOrder(orderData);
       // Clear cart after successful order processing
       clearCart();
-      toast.success("Your order has been placed successfully!");
     } else {
-      toast.error("There was an error processing your order");
       navigate('/checkout');
     }
   }, [processOrder, clearCart, navigate, cart.length, shippingInfo, paymentInfo]);

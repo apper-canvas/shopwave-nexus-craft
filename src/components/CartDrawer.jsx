@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import getIcon from '../utils/iconUtils';
@@ -28,13 +27,11 @@ const CartDrawer = () => {
   // Handle checkout
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast.error("Your cart is empty!");
       return;
     }
     
     setIsCartOpen(false);
     navigate('/checkout');
-    toast.info("Proceed to checkout");
   };
 
   if (!isCartOpen) return null;

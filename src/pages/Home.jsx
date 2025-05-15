@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import MainFeature from '../components/MainFeature';
-import { toast } from 'react-toastify';
 import getIcon from '../utils/iconUtils';
 
 const Home = () => {
@@ -39,7 +38,6 @@ const Home = () => {
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toast.error('Please enter a valid email address');
       return;
     }
     
@@ -47,7 +45,6 @@ const Home = () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success(`Thanks for subscribing! You'll receive updates at ${email}`);
       setEmail('');
     } finally {
       setIsSubmitting(false);

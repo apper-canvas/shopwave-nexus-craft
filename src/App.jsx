@@ -1,10 +1,8 @@
 import { useState, useEffect, createContext } from 'react';
 import { Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
 import { useCart } from './contexts/CartContext';
 import CartDrawer from './components/CartDrawer';
-import 'react-toastify/dist/ReactToastify.css';
 import getIcon from './utils/iconUtils';
 
 // Pages
@@ -256,19 +254,6 @@ function App() {
           </div>
         </footer>
 
-        {/* Toast Container */}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme={darkMode ? "dark" : "light"}
-        />
 
         {/* Cart Drawer */}
         <CartDrawer />
