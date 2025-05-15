@@ -112,15 +112,9 @@ function App() {
       <footer className="bg-white dark:bg-surface-800 py-6 border-t border-surface-200 dark:border-surface-700 mt-auto">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-surface-600 dark:text-surface-400 mb-4 md:mb-0">
+            <p className="text-surface-600 dark:text-surface-400">
               © {new Date().getFullYear()} ShopWave. All rights reserved.
             </p>
-            <div className="flex gap-6">
-              <Link to="/" className="text-surface-600 dark:text-surface-400 hover:text-primary dark:hover:text-primary transition-colors">Home</Link>
-              <Link to="/track-order" className="text-surface-600 dark:text-surface-400 hover:text-primary dark:hover:text-primary transition-colors">
-                Track Order
-              </Link>
-            </div>
           </div>
         </div>
       </footer>
