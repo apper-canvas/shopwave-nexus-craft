@@ -20,7 +20,15 @@ export const CartProvider = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [shippingInfo, setShippingInfo] = useState(null);
   const [paymentInfo, setPaymentInfo] = useState(null);
-  const [orderHistory, setOrderHistory] = useState([]);
+  const [orderHistory, setOrderHistory] = useState(() => {
+    const savedHistory = localStorage.getItem('orderHistory');
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  });
+
+  // Save order history to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
+  }, [orderHistory]);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -116,6 +124,23 @@ export const CartProvider = ({ children }) => {
     setCart([]);
   };
 
+  // Track order
+  const trackOrder = useCallback((orderId, email) => {
+    // Find the order in history
+    const order = orderHistory.find(order => 
+      order.id.toString() === orderId && 
+      order.shipping.email.toLowerCase() === email.toLowerCase()
+    );
+    
+    if (order) {
+      // Generate a random shipping status for demo purposes
+      const statuses = ['Processing', 'Shipped', 'Out for Delivery', 'Delivered'];
+      const statusIndex = Math.min(Math.floor((Date.now() - order.id) / (1000 * 60 * 60 * 24)), 3);
+      return { ...order, status: statuses[statusIndex] };
+    }
+    return null;
+  }, [orderHistory]);
+
   return (
     <CartContext.Provider value={{
       cart,
@@ -136,7 +161,8 @@ export const CartProvider = ({ children }) => {
       paymentInfo,
       savePaymentInfo,
       processOrder,
-      orderHistory
+      orderHistory,
+      trackOrder
     }}>
       {children}
     </CartContext.Provider>

@@ -13,6 +13,7 @@ import CheckoutPage from './pages/checkout/CheckoutPage';
 import ShippingInfo from './pages/checkout/ShippingInfo';
 import PaymentInfo from './pages/checkout/PaymentInfo';
 import OrderConfirmation from './pages/checkout/OrderConfirmation';
+import TrackOrder from './pages/TrackOrder';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -61,6 +62,7 @@ function App() {
               <ShoppingCartIcon className="w-5 h-5" />
               {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 bg-secondary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+            <Link to="/track-order" className="hidden sm:block hover:underline text-surface-700 dark:text-surface-300">Track Order</Link>
                   {totalItems}
                 </span>
               )}
@@ -94,6 +96,7 @@ function App() {
           <Route path="/checkout/shipping" element={<ProtectedCheckoutRoute><ShippingInfo /></ProtectedCheckoutRoute>} />
           <Route path="/checkout/payment" element={<ProtectedCheckoutRoute><PaymentInfo /></ProtectedCheckoutRoute>} />
           <Route path="/checkout/confirmation" element={<ProtectedCheckoutRoute><OrderConfirmation /></ProtectedCheckoutRoute>} />
+          <Route path="/track-order" element={<TrackOrder />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -101,9 +104,18 @@ function App() {
 
       {/* Footer */}
       <footer className="bg-white dark:bg-surface-800 py-6 border-t border-surface-200 dark:border-surface-700 mt-auto">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-surface-600 dark:text-surface-400">
-            © {new Date().getFullYear()} ShopWave. All rights reserved.
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <p className="text-surface-600 dark:text-surface-400 mb-4 md:mb-0">
+              © {new Date().getFullYear()} ShopWave. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              <Link to="/" className="text-surface-600 dark:text-surface-400 hover:text-primary dark:hover:text-primary transition-colors">Home</Link>
+              <Link to="/track-order" className="text-surface-600 dark:text-surface-400 hover:text-primary dark:hover:text-primary transition-colors">
+                Track Order
+              </Link>
+            </div>
+          </div>
           </p>
         </div>
       </footer>

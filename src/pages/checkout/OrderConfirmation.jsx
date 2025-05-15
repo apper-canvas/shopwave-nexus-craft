@@ -23,6 +23,7 @@ const OrderConfirmation = () => {
   const CheckCircleIcon = getIcon('CheckCircle');
   const TruckIcon = getIcon('Truck');
   const HomeIcon = getIcon('Home');
+  const SearchIcon = getIcon('Search');
 
   useEffect(() => {
     // Process the order when component mounts
@@ -87,7 +88,12 @@ const OrderConfirmation = () => {
           <Link to="/" className="btn btn-primary mt-8 inline-flex items-center gap-2">
             <HomeIcon className="w-5 h-5" /> Continue Shopping
           </Link>
+          
+          <Link to={`/track-order?orderId=${order.id.toString().slice(-8)}`} className="btn btn-secondary mt-8 ml-4 inline-flex items-center gap-2">
+            <SearchIcon className="w-5 h-5" /> Track Your Order
+          </Link>
         </div>
+
       </div>
     </CheckoutLayout>
   );
