@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 
 // Import services
@@ -72,13 +71,13 @@ export const CartProvider = ({ children }) => {
       }
     });
     
-    toast.success(`${product.name} added to cart!`);
+    console.log(`${product.name} added to cart!`);
   };
 
   // Remove item from cart
   const removeFromCart = (productId) => {
     setCart(prevCart => prevCart.filter(item => item.id !== productId));
-    toast.info("Item removed from cart");
+    console.log("Item removed from cart");
   };
 
   // Update item quantity
@@ -111,19 +110,19 @@ export const CartProvider = ({ children }) => {
     return new Promise(async (resolve, reject) => {
       try {
         if (cart.length === 0) {
-          toast.error("Your cart is empty!");
+          console.error("Your cart is empty!");
           reject("Cart is empty");
           return;
         }
         
         if (!shippingInfo || !paymentInfo) {
-          toast.error("Missing shipping or payment information!");
+          console.error("Missing shipping or payment information!");
           reject("Missing information");
           return;
         }
 
         if (!isAuthenticated) {
-          toast.error("You must be logged in to complete an order!");
+          console.error("You must be logged in to complete an order!");
           reject("Not authenticated");
           return;
         }
@@ -185,7 +184,7 @@ export const CartProvider = ({ children }) => {
       } catch (error) {
         setIsProcessing(false);
         console.error("Error processing order:", error);
-        toast.error("Failed to process order. Please try again.");
+        console.error("Failed to process order. Please try again.");
         reject(error);
       }
     });
