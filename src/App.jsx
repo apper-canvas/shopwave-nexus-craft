@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { useCart } from './contexts/CartContext';
 import CartDrawer from './components/CartDrawer';
@@ -116,7 +116,6 @@ function App() {
               </Link>
             </div>
           </div>
-          </p>
         </div>
       </footer>
 
